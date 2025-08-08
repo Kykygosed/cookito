@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cookitos Dashboard</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 1rem;
+    background: #f9f9f9;
+    color: #222;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  #balance {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  label {
+    font-weight: bold;
+  }
+  input[type=text], input[type=number] {
+    width: 100%;
+    padding: 0.5rem;
+    margin: 0.3rem 0 1rem 0;
+    box-sizing: border-box;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  #searchResults {
+    border: 1px solid #ccc;
+    max-height: 120px;
+    overflow-y: auto;
+    background: white;
+    margin-top: -1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+  }
+  #searchResults div {
+    padding: 0.5rem;
+    cursor: pointer;
+  }
+  #searchResults div:hover {
+    background-color: #eef;
+  }
+  button {
+    padding: 0.7rem 1.5rem;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  #notifications {
+    margin-top: 2rem;
+  }
+  #notifications h2 {
+    margin-bottom: 0.5rem;
+  }
+  #notifications ul {
+    list-style: none;
+    padding-left: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  #notifications li {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  #notifications li:last-child {
+    border-bottom: none;
+  }
+  #logoutBtn {
+    margin-top: 2rem;
+    background-color: #dc3545;
+    width: 100%;
+  }
+  .selectedUser {
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+<h1>Cookitos Dashboard</h1>
+<div id="balance">Solde : <span id="balanceAmount">...</span> µ</div>
+
+<form id="transferForm" autocomplete="off">
+  <label for="recipientSearch">Destinataire (pseudo) :</label>
+  <input type="text" id="recipientSearch" placeholder="Tapez le pseudo..." required />
+  <div id="searchResults"></div>
+
+  <div class="selectedUser" id="selectedUserInfo" style="display:none;"></div>
+
+  <label for="amount">Montant à envoyer (ex: 10.25) :</label>
+  <input type="number" id="amount" step="0.01" min="0.01" max="10000" required />
+
+  <button type="submit" disabled id="sendBtn">Envoyer</button>
+</form>
+
+<div id="notifications">
+  <h2>Notifications récentes</h2>
+  <ul id="notifList">
+    <li>Chargement...</li>
+  </ul>
+</div>
+
+<button id="logoutBtn">Déconnexion</button>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDyWu4TI4PIRXfeb7yqt0WIGClgu10IjkM",
+    authDomain: "kylita-f2923.firebaseapp.com",
+    databaseURL: "https://kylita-f2923-default-rtdb.firebaseio.com",
+    projectId: "kylita-f2923",
+    storageBucket: "kylita-f2923.firebasestorage.app",
+    messagingSenderId: "431823530994",
+    appId: "1:431823530994:web:88a07e633751686e5ad96b",
+    measurementId: "G-F4LLNWQJ16"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  // Elements
+  const balanceAmount = document.getElementById('balanceAmount');
+  const recipientSearch = document.getElementById('recipientSearch');
+  const searchResults = document.getElementById('searchResults');
+  const selectedUserInfo = document.getElementById('selectedUserInfo');
+  const amountInput = document.getElementById('amount');
+  const sendBtn = document.getElementById('sendBtn');
+  const notifList = document.getElementById('notifList');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const transferForm = document.getElementById('transferForm');
+
+  let currentUser = null;
+  let currentUserData = null;
+  let selectedUser = null;
+
+  // Check auth state
+  auth.onAuthStateChanged(async user => {
+    if (!user) {
+      // Pas connecté → rediriger vers login
+      window.location.href = 'index.html';
+      return;
+    }
+    currentUser = user;
+    await loadCurrentUserData();
+    setupBalanceListener();
+    setupNotifListener();
+  });
+
+  async function loadCurrentUserData() {
+    const userRef = db.ref('users/' + currentUser.uid);
+    const snap = await userRef.once('value');
+    if (!snap.exists()) {
+      // Crée le profil avec pseudo, email, balance 50µ par défaut
+      const pseudo = currentUser.email.split('@')[0]; // simple fallback pseudo
+      await userRef.set({
+        pseudo: pseudo,
+        email: currentUser.email,
+        balance: 50.00
+      });
+      currentUserData = { pseudo, email: currentUser.email, balance: 50.00 };
+    } else {
+      currentUserData = snap.val();
+      // Si balance pas défini, mettre 50
+      if (typeof currentUserData.balance !== 'number') {
+        await userRef.update({ balance: 50.00 });
+        currentUserData.balance = 50.00;
+      }
+    }
+  }
+
+  // Écoute en temps réel du solde
+  function setupBalanceListener() {
+    const userBalanceRef = db.ref('users/' + currentUser.uid + '/balance');
+    userBalanceRef.on('value', snapshot => {
+      const bal = snapshot.val();
+      balanceAmount.textContent = bal?.toFixed(2) ?? '0.00';
+      currentUserData.balance = bal;
+      validateForm();
+    });
+  }
+
+  // Recherche instantanée des utilisateurs par pseudo (limit 10)
+  let searchTimeout;
+  recipientSearch.addEventListener('input', () => {
+    selectedUser = null;
+    selectedUserInfo.style.display = 'none';
+    sendBtn.disabled = true;
+
+    clearTimeout(searchTimeout);
+    const term = recipientSearch.value.trim().toLowerCase();
+    if (term.length < 2) {
+      searchResults.innerHTML = '';
+      return;
+    }
+    searchTimeout = setTimeout(() => searchUsers(term), 300);
+  });
+
+  async function searchUsers(term) {
+    // On récupère tous les users et on filtre côté client (limité ici pour la démo)
+    const usersRef = db.ref('users');
+    const snap = await usersRef.once('value');
+    const allUsers = snap.val() || {};
+
+    // Filtre par pseudo contenant term (ignore case), exclut soi-même
+    const filtered = Object.entries(allUsers)
+      .filter(([uid, u]) => {
+        return u.pseudo.toLowerCase().includes(term) && uid !== currentUser.uid;
+      })
+      .slice(0, 10);
+
+    if (filtered.length === 0) {
+      searchResults.innerHTML = '<div>Aucun résultat</div>';
+      return;
+    }
+    searchResults.innerHTML = filtered
+      .map(([uid, u]) => `<div data-uid="${uid}" data-pseudo="${u.pseudo}" data-email="${u.email}">
+        <strong>${u.pseudo}</strong> - <small>${u.email}</small>
+      </div>`)
+      .join('');
+  }
+
+  // Cliquer sur un utilisateur dans la liste de recherche
+  searchResults.addEventListener('click', e => {
+    if (e.target.closest('div')) {
+      const div = e.target.closest('div');
+      selectedUser = {
+        uid: div.dataset.uid,
+        pseudo: div.dataset.pseudo,
+        email: div.dataset.email
+      };
+      selectedUserInfo.textContent = `Destinataire : ${selectedUser.pseudo} (${selectedUser.email})`;
+      selectedUserInfo.style.display = 'block';
+      searchResults.innerHTML = '';
+      recipientSearch.value = selectedUser.pseudo;
+      validateForm();
+    }
+  });
+
+  // Validation du formulaire
+  function validateForm() {
+    const amountVal = parseFloat(amountInput.value);
+    if (
+      selectedUser &&
+      !isNaN(amountVal) &&
+      amountVal >= 0.01 &&
+      amountVal <= currentUserData.balance
+    ) {
+      sendBtn.disabled = false;
+    } else {
+      sendBtn.disabled = true;
+    }
+  }
+  amountInput.addEventListener('input', validateForm);
+
+  // Envoi du virement
+  transferForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!selectedUser) return alert('Veuillez sélectionner un destinataire.');
+    const amountVal = parseFloat(amountInput.value);
+    if (isNaN(amountVal) || amountVal < 0.01) return alert('Montant invalide.');
+    if (amountVal > currentUserData.balance) return alert('Solde insuffisant.');
+
+    sendBtn.disabled = true;
+
+    try {
+      // Transaction atomique Firebase pour mise à jour des soldes
+      const fromUserRef = db.ref('users/' + currentUser.uid + '/balance');
+      const toUserRef = db.ref('users/' + selectedUser.uid + '/balance');
+      const transactionsRef = db.ref('transactions');
+
+      await db.ref().update({}); // No-op to ensure connected
+
+      await db.ref().transaction(currentData => {
+        // on ne l'utilise pas ici, on fait transaction plus bas
+        return currentData;
+      });
+
+      await fromUserRef.transaction(fromBalance => {
+        if (fromBalance === null || fromBalance < amountVal) throw "Solde insuffisant";
+        return parseFloat((fromBalance - amountVal).toFixed(2));
+      });
+
+      await toUserRef.transaction(toBalance => {
+        if (toBalance === null) return amountVal;
+        return parseFloat((toBalance + amountVal).toFixed(2));
+      });
+
+      // Enregistrer la transaction dans la base
+      const newTxRef = transactionsRef.push();
+      await newTxRef.set({
+        fromUID: currentUser.uid,
+        toUID: selectedUser.uid,
+        amount: amountVal,
+        date: Date.now()
+      });
+
+      amountInput.value = '';
+      selectedUser = null;
+      selectedUserInfo.style.display = 'none';
+      recipientSearch.value = '';
+      sendBtn.disabled = true;
+      alert(`Vous avez envoyé ${amountVal.toFixed(2)} µ à ${selectedUserInfo.textContent}`);
+    } catch (err) {
+      alert('Erreur lors du transfert: ' + err);
+      sendBtn.disabled = false;
+    }
+  });
+
+  // Affichage des notifications en temps réel (transactions où on est from ou to)
+  function setupNotifListener() {
+    const txRef = db.ref('transactions').orderByChild('date').limitToLast(50);
+    txRef.on('value', snapshot => {
+      const allTx = snapshot.val() || {};
+      const notifItems = [];
+
+      Object.entries(allTx).forEach(([txid, tx]) => {
+        if (tx.fromUID === currentUser.uid || tx.toUID === currentUser.uid) {
+          const sent = tx.fromUID === currentUser.uid;
+          const otherUID = sent ? tx.toUID : tx.fromUID;
+          // Récupérer pseudo destinataire ou émetteur
+          db.ref('users/' + otherUID).once('value').then(snap => {
+            const otherUser = snap.val() || { pseudo: 'Inconnu' };
+            const dateStr = new Date(tx.date).toLocaleString('fr-FR');
+            const line = `${dateStr} — ${sent ? 'Envoyé à' : 'Reçu de'} <strong>${otherUser.pseudo}</strong> : ${tx.amount.toFixed(2)} µ`;
+            const li = document.createElement('li');
+            li.innerHTML = line;
+            notifList.appendChild(li);
+          });
+        }
+      });
+
+      // Clear and re-add after promises resolved
+      notifList.innerHTML = '';
+      const promises = Object.entries(allTx)
+        .filter(([txid, tx]) => tx.fromUID === currentUser.uid || tx.toUID === currentUser.uid)
+        .map(async ([txid, tx]) => {
+          const sent = tx.fromUID === currentUser.uid;
+          const otherUID = sent ? tx.toUID : tx.fromUID;
+          const snap = await db.ref('users/' + otherUID).once('value');
+          const otherUser = snap.val() || { pseudo: 'Inconnu' };
+          const dateStr = new Date(tx.date).toLocaleString('fr-FR');
+          return `<li>${dateStr} — ${sent ? 'Envoyé à' : 'Reçu de'} <strong>${otherUser.pseudo}</strong> : ${tx.amount.toFixed(2)} µ</li>`;
+        });
+
+      Promise.all(promises).then(items => {
+        if (items.length === 0) {
+          notifList.innerHTML = '<li>Aucune notification</li>';
+        } else {
+          notifList.innerHTML = items.reverse().join('');
+        }
+      });
+    });
+  }
+
+  logoutBtn.addEventListener('click', () => {
+    auth.signOut();
+  });
+</script>
+</body>
+</html>
