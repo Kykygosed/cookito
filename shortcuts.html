@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Mes raccourcis stylés</title>
+<title>Mes raccourcis - style Opera GX</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Roboto&display=swap');
 
   body {
     margin: 0; padding: 0;
-    background: #121214; /* très sombre */
+    background: #121214;
     color: #fff;
     font-family: 'Roboto', sans-serif;
     overflow: hidden;
@@ -77,6 +77,29 @@
     cursor: not-allowed;
   }
 
+  /* Bouton ajouter */
+  #addShortcutBtn {
+    position: fixed;
+    top: 20px; right: 20px;
+    padding: 12px 28px;
+    border-radius: 30px;
+    border: none;
+    background: #e63946;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 0 15px #e63946cc;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    user-select: none;
+    z-index: 1000;
+  }
+  #addShortcutBtn:hover {
+    background: #f94144;
+    box-shadow: 0 0 25px #f94144ee;
+  }
+
   /* Cards */
   .card {
     position: absolute;
@@ -92,6 +115,9 @@
     flex-direction: column;
     justify-content: center;
     transition: box-shadow 0.3s ease;
+    min-width: 140px;
+    min-height: 80px;
+    overflow: hidden;
   }
   .card:hover {
     box-shadow: 0 0 25px #f94144dd;
@@ -195,44 +221,35 @@
 </head>
 <body>
 
-
-
 <div id="container"></div>
 
-<!-- Popup Ajouter / Modifier raccourci -->
-<div id="popupOverlay" class="popupOverlay" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+<button id="addShortcutBtn">+ Ajouter un raccourci</button>
+
+<!-- Login overlay -->
+<div id="loginOverlay">
+  <h2>Bienvenue !</h2>
+  <input id="loginInput" placeholder="Entrez votre pseudo" maxlength="20" />
+  <button id="loginBtn" disabled>Connexion</button>
+</div>
+
+<!-- Popup ajout/modif -->
+<div id="popupOverlay">
   <div id="popup">
-    <h2 id="popupTitle">Ajouter un raccourci</h2>
-    <label for="siteName">Nom du site</label>
-    <input type="text" id="siteName" placeholder="Ex: Google" autocomplete="off" />
-    <label for="siteURL">URL</label>
-    <input type="url" id="siteURL" placeholder="Ex: https://google.com" autocomplete="off" />
-    <div id="popupButtons">
+    <h3 id="popupTitle">Ajouter un raccourci</h3>
+    <input type="text" id="siteNameInput" placeholder="Nom du site" maxlength="30" />
+    <input type="url" id="siteURLInput" placeholder="URL complète (ex: https://...)" />
+    <div style="text-align:center; margin-top: 10px;">
       <button id="saveBtn">Enregistrer</button>
       <button id="cancelBtn">Annuler</button>
     </div>
   </div>
 </div>
 
-<!-- Popup Login (pseudo) -->
-<div id="loginOverlay" class="popupOverlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle" style="display:flex;">
-  <div id="loginPopup">
-    <h2 id="loginTitle">Bienvenue ! Entrez votre pseudo</h2>
-    <input type="text" id="loginInput" placeholder="Ton pseudo ici" autocomplete="off" />
-    <div id="loginButtons">
-      <button id="loginBtn">Commencer</button>
-    </div>
-  </div>
-</div>
-
-<div id="hint">Appuie sur "e" pour ajouter un raccourci</div>
-
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
+  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyDyWu4TI4PIRXfeb7yqt0WIGClgu10IjkM",
     authDomain: "kylita-f2923.firebaseapp.com",
@@ -248,252 +265,285 @@
   const auth = firebase.auth();
   const db = firebase.database();
 
-  const container = document.getElementById('container');
-
-  const popupOverlay = document.getElementById('popupOverlay');
-  const popupTitle = document.getElementById('popupTitle');
-  const siteNameInput = document.getElementById('siteName');
-  const siteURLInput = document.getElementById('siteURL');
-  const saveBtn = document.getElementById('saveBtn');
-  const cancelBtn = document.getElementById('cancelBtn');
-
   const loginOverlay = document.getElementById('loginOverlay');
   const loginInput = document.getElementById('loginInput');
   const loginBtn = document.getElementById('loginBtn');
 
+  const container = document.getElementById('container');
+  const addShortcutBtn = document.getElementById('addShortcutBtn');
+  const popupOverlay = document.getElementById('popupOverlay');
+  const popupTitle = document.getElementById('popupTitle');
+  const siteNameInput = document.getElementById('siteNameInput');
+  const siteURLInput = document.getElementById('siteURLInput');
+  const saveBtn = document.getElementById('saveBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+
   let currentUser = null;
-  let userId = null; // firebase UID
-  let shortcuts = {};
-  let dragTarget = null;
-  let resizeTarget = null;
-  let dragOffsetX = 0;
-  let dragOffsetY = 0;
-  let resizeStartWidth = 0;
-  let resizeStartHeight = 0;
-  let resizeStartX = 0;
-  let resizeStartY = 0;
-  let editingId = null;
+  let currentEditingId = null; // null = new shortcut; sinon modif
 
-  // ---------------------------
-  // Auth anonyme avec pseudo
-  // ---------------------------
-  function showLogin() {
-    loginOverlay.style.display = 'flex';
-    container.style.filter = 'blur(3px)';
-    loginInput.value = '';
-    loginInput.focus();
-  }
-  function hideLogin() {
-    loginOverlay.style.display = 'none';
-    container.style.filter = 'none';
-  }
+  // Activer bouton connexion si pseudo >= 3 chars
+  loginInput.addEventListener('input', () => {
+    loginBtn.disabled = loginInput.value.trim().length < 3;
+  });
 
-  loginBtn.addEventListener('click', () => {
+  // Connexion Firebase anonyme + mise à jour displayName avec pseudo
+  loginBtn.addEventListener('click', async () => {
     const pseudo = loginInput.value.trim();
-    if(pseudo.length < 3) {
-      alert('Le pseudo doit faire au moins 3 caractères.');
-      loginInput.focus();
-      return;
-    }
-    loginBtn.disabled = true;
-    auth.signInAnonymously()
-    .then(cred => {
-      currentUser = cred.user;
-      userId = currentUser.uid;
-      // Save pseudo in DB
-      return db.ref('accounts/' + userId).update({ pseudo });
-    })
-    .then(() => {
-      hideLogin();
+    if (pseudo.length < 3) return;
+    try {
+      // Connexion anonyme Firebase
+      let userCredential = await auth.signInAnonymously();
+
+      // On update displayName via updateProfile (Firebase v9 compat)
+      await userCredential.user.updateProfile({ displayName: pseudo });
+
+      currentUser = userCredential.user;
+
+      // Masquer login
+      loginOverlay.style.display = 'none';
+
+      // Charger raccourcis
       loadShortcuts();
-    })
-    .catch(err => {
-      alert('Erreur lors de la connexion Firebase : ' + err.message);
-      loginBtn.disabled = false;
-    });
+
+    } catch (e) {
+      alert('Erreur connexion Firebase : ' + e.message);
+      console.error(e);
+    }
   });
 
-  loginInput.addEventListener('keydown', e => {
-    if(e.key === 'Enter') loginBtn.click();
-  });
-
-  // ---------------------------
-  // Charger raccourcis
-  // ---------------------------
+  // Charger les raccourcis depuis Firebase et afficher
   function loadShortcuts() {
-    db.ref('accounts/' + userId + '/shortcuts').once('value').then(snapshot => {
-      shortcuts = snapshot.val() || {};
-      renderShortcuts();
+    if (!currentUser) return;
+    const shortcutsRef = db.ref(`accounts/${currentUser.uid}/shortcuts`);
+
+    shortcutsRef.on('value', (snapshot) => {
+      container.innerHTML = ''; // clear
+
+      const data = snapshot.val() || {};
+
+      Object.entries(data).forEach(([id, shortcut]) => {
+        createShortcutCard(id, shortcut);
+      });
     });
   }
 
-  // ---------------------------
-  // Sauvegarder raccourcis
-  // ---------------------------
-  function saveShortcuts() {
-    db.ref('accounts/' + userId + '/shortcuts').set(shortcuts);
-  }
-
-  // ---------------------------
-  // Créer et afficher une carte raccourci
-  // ---------------------------
-  function createCard(id, data) {
-    let card = document.createElement('div');
-    card.className = 'card';
-    card.style.left = (data.x || 20) + 'px';
-    card.style.top = (data.y || 20) + 'px';
-    card.style.width = (data.width || 200) + 'px';
-    card.style.height = (data.height || 120) + 'px';
+  // Créer une carte raccourci sur la page
+  function createShortcutCard(id, { name, url, x=50, y=50, w=160, h=90 }) {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.left = x + 'px';
+    card.style.top = y + 'px';
+    card.style.width = w + 'px';
+    card.style.height = h + 'px';
     card.setAttribute('data-id', id);
 
-    // Contenu lien + url
-    card.innerHTML = `
-      <a href="${data.url}" target="_blank" rel="noopener noreferrer" title="${data.name}">${data.name}</a>
-      <small>${data.url}</small>
-      <div class="resize-handle"></div>
-    `;
+    // Lien vers site
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = name;
+    card.appendChild(a);
 
-    // Drag events
-    card.addEventListener('mousedown', (e) => {
-      if(e.target.classList.contains('resize-handle')) {
-        // Resize start
-        resizeTarget = card;
-        resizeStartWidth = card.offsetWidth;
-        resizeStartHeight = card.offsetHeight;
-        resizeStartX = e.clientX;
-        resizeStartY = e.clientY;
-        e.preventDefault();
-        e.stopPropagation();
-      } else {
-        // Drag start
-        dragTarget = card;
-        dragOffsetX = e.clientX - card.offsetLeft;
-        dragOffsetY = e.clientY - card.offsetTop;
-        card.style.zIndex = 1000;
-      }
-    });
+    // URL en petit
+    const small = document.createElement('small');
+    small.textContent = url;
+    card.appendChild(small);
 
-    // Double click = modifier raccourci
-    card.addEventListener('dblclick', (e) => {
-      editingId = id;
-      popupTitle.textContent = 'Modifier un raccourci';
-      siteNameInput.value = data.name;
-      siteURLInput.value = data.url;
-      showPopup();
+    // Resize handle
+    const resizeHandle = document.createElement('div');
+    resizeHandle.classList.add('resize-handle');
+    card.appendChild(resizeHandle);
+
+    // Drag & Drop
+    dragElement(card);
+
+    // Resize
+    makeResizable(card, resizeHandle);
+
+    // Click sur carte ouvre popup modif
+    card.addEventListener('dblclick', () => {
+      openPopupForEdit(id, { name, url, x, y, w, h });
     });
 
     container.appendChild(card);
   }
 
-  // ---------------------------
-  // Rendu de tous les raccourcis
-  // ---------------------------
-  function renderShortcuts() {
-    container.innerHTML = '';
-    for(let id in shortcuts) {
-      createCard(id, shortcuts[id]);
-    }
-  }
-
-  // ---------------------------
-  // Popup gestion
-  // ---------------------------
-  function showPopup() {
-    popupOverlay.style.display = 'flex';
-    siteNameInput.focus();
-  }
-  function hidePopup() {
-    popupOverlay.style.display = 'none';
-    siteNameInput.value = '';
-    siteURLInput.value = '';
-    editingId = null;
-  }
-
-  saveBtn.addEventListener('click', () => {
-    const name = siteNameInput.value.trim();
-    const url = siteURLInput.value.trim();
-    if(name === '' || url === '') {
-      alert('Veuillez renseigner nom et URL');
-      return;
-    }
-    // Validation simple URL
-    try {
-      new URL(url);
-    } catch {
-      alert('URL invalide');
-      return;
-    }
-
-    if(editingId) {
-      // Modifier raccourci
-      shortcuts[editingId].name = name;
-      shortcuts[editingId].url = url;
+  // Ouvrir popup ajout/modif
+  function openPopupForEdit(id=null, data=null) {
+    currentEditingId = id;
+    if (id) {
+      popupTitle.textContent = 'Modifier le raccourci';
+      siteNameInput.value = data.name;
+      siteURLInput.value = data.url;
     } else {
-      // Nouveau raccourci
-      const newId = Date.now().toString();
-      shortcuts[newId] = {name, url, x: 20, y: 20, width: 200, height: 120};
-    }
-    saveShortcuts();
-    renderShortcuts();
-    hidePopup();
-  });
-
-  cancelBtn.addEventListener('click', () => {
-    hidePopup();
-  });
-
-  // ---------------------------
-  // Drag & Resize document mouse events
-  // ---------------------------
-  document.addEventListener('mousemove', e => {
-    if(dragTarget) {
-      let newX = e.clientX - dragOffsetX;
-      let newY = e.clientY - dragOffsetY;
-      newX = Math.max(0, Math.min(newX, container.clientWidth - dragTarget.offsetWidth));
-      newY = Math.max(0, Math.min(newY, container.clientHeight - dragTarget.offsetHeight));
-      dragTarget.style.left = newX + 'px';
-      dragTarget.style.top = newY + 'px';
-      // Update data
-      const id = dragTarget.getAttribute('data-id');
-      shortcuts[id].x = newX;
-      shortcuts[id].y = newY;
-      saveShortcuts();
-    } else if(resizeTarget) {
-      let deltaX = e.clientX - resizeStartX;
-      let deltaY = e.clientY - resizeStartY;
-      let newWidth = Math.max(150, resizeStartWidth + deltaX);
-      let newHeight = Math.max(80, resizeStartHeight + deltaY);
-      resizeTarget.style.width = newWidth + 'px';
-      resizeTarget.style.height = newHeight + 'px';
-      // Update data
-      const id = resizeTarget.getAttribute('data-id');
-      shortcuts[id].width = newWidth;
-      shortcuts[id].height = newHeight;
-      saveShortcuts();
-    }
-  });
-
-  document.addEventListener('mouseup', e => {
-    dragTarget = null;
-    resizeTarget = null;
-    editingId = null;
-  });
-
-  // ---------------------------
-  // Keyboard shortcut to add new
-  // ---------------------------
-  document.addEventListener('keydown', e => {
-    if(e.key === 'e' && !loginOverlay.style.display) {
-      editingId = null;
       popupTitle.textContent = 'Ajouter un raccourci';
       siteNameInput.value = '';
       siteURLInput.value = '';
-      showPopup();
     }
+    popupOverlay.style.display = 'flex';
+    siteNameInput.focus();
+  }
+
+  // Fermer popup
+  cancelBtn.addEventListener('click', () => {
+    popupOverlay.style.display = 'none';
+    currentEditingId = null;
   });
 
-  // Au chargement, on affiche le login
-  showLogin();
+  // Enregistrer raccourci
+  saveBtn.addEventListener('click', async () => {
+    const name = siteNameInput.value.trim();
+    const url = siteURLInput.value.trim();
+
+    if (name.length < 1 || !url.match(/^https?:\/\/.+/i)) {
+      alert('Veuillez entrer un nom et une URL valide (commençant par http:// ou https://)');
+      return;
+    }
+    if (!currentUser) {
+      alert('Non connecté');
+      return;
+    }
+
+    // Si modif ou ajout
+    const shortcutsRef = db.ref(`accounts/${currentUser.uid}/shortcuts`);
+    if (currentEditingId) {
+      // Récup les positions/tailles actuelles
+      const card = container.querySelector(`[data-id="${currentEditingId}"]`);
+      if (!card) return alert('Carte non trouvée');
+
+      const x = parseInt(card.style.left, 10) || 50;
+      const y = parseInt(card.style.top, 10) || 50;
+      const w = parseInt(card.style.width, 10) || 160;
+      const h = parseInt(card.style.height, 10) || 90;
+
+      await shortcutsRef.child(currentEditingId).set({ name, url, x, y, w, h });
+    } else {
+      // Ajout avec position par défaut centre
+      await shortcutsRef.push({ name, url, x: 50, y: 50, w: 160, h: 90 });
+    }
+
+    popupOverlay.style.display = 'none';
+    currentEditingId = null;
+  });
+
+  // Déplacer la carte
+  function dragElement(elmnt) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    elmnt.style.cursor = 'grab';
+
+    elmnt.onpointerdown = dragMouseDown;
+
+    function dragMouseDown(e) {
+      if (e.target.classList.contains('resize-handle')) return; // ne pas drag si resize
+      e.preventDefault();
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onpointermove = elementDrag;
+      document.onpointerup = closeDragElement;
+      elmnt.style.cursor = 'grabbing';
+    }
+
+    function elementDrag(e) {
+      e.preventDefault();
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      let newX = elmnt.offsetLeft - pos1;
+      let newY = elmnt.offsetTop - pos2;
+
+      // Limiter à l'intérieur de container
+      const maxX = container.clientWidth - elmnt.clientWidth;
+      const maxY = container.clientHeight - elmnt.clientHeight;
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      elmnt.style.left = newX + "px";
+      elmnt.style.top = newY + "px";
+    }
+
+    function closeDragElement() {
+      document.onpointerup = null;
+      document.onpointermove = null;
+      elmnt.style.cursor = 'grab';
+
+      // Save position in Firebase
+      if (!currentUser) return;
+      const id = elmnt.getAttribute('data-id');
+      if (!id) return;
+
+      const shortcutsRef = db.ref(`accounts/${currentUser.uid}/shortcuts/${id}`);
+
+      shortcutsRef.once('value').then(snap => {
+        const data = snap.val() || {};
+        shortcutsRef.update({
+          x: parseInt(elmnt.style.left,10),
+          y: parseInt(elmnt.style.top,10),
+          w: data.w || elmnt.clientWidth,
+          h: data.h || elmnt.clientHeight,
+        });
+      });
+    }
+  }
+
+  // Resize carte
+  function makeResizable(elmnt, handle) {
+    let startX, startY, startWidth, startHeight;
+
+    handle.onpointerdown = function(e) {
+      e.preventDefault();
+      startX = e.clientX;
+      startY = e.clientY;
+      startWidth = parseInt(document.defaultView.getComputedStyle(elmnt).width, 10);
+      startHeight = parseInt(document.defaultView.getComputedStyle(elmnt).height, 10);
+      document.onpointermove = doDrag;
+      document.onpointerup = stopDrag;
+      document.body.style.userSelect = 'none';
+      elmnt.style.cursor = 'se-resize';
+    };
+
+    function doDrag(e) {
+      let newWidth = startWidth + e.clientX - startX;
+      let newHeight = startHeight + e.clientY - startY;
+
+      // Limiter taille
+      newWidth = Math.max(80, Math.min(newWidth, container.clientWidth - elmnt.offsetLeft));
+      newHeight = Math.max(40, Math.min(newHeight, container.clientHeight - elmnt.offsetTop));
+
+      elmnt.style.width = newWidth + 'px';
+      elmnt.style.height = newHeight + 'px';
+    }
+
+    function stopDrag(e) {
+      document.onpointermove = null;
+      document.onpointerup = null;
+      document.body.style.userSelect = '';
+      elmnt.style.cursor = 'grab';
+
+      // Save size in Firebase
+      if (!currentUser) return;
+      const id = elmnt.getAttribute('data-id');
+      if (!id) return;
+      const shortcutsRef = db.ref(`accounts/${currentUser.uid}/shortcuts/${id}`);
+
+      shortcutsRef.once('value').then(snap => {
+        const data = snap.val() || {};
+        shortcutsRef.update({
+          x: data.x || elmnt.offsetLeft,
+          y: data.y || elmnt.offsetTop,
+          w: parseInt(elmnt.style.width,10),
+          h: parseInt(elmnt.style.height,10),
+        });
+      });
+    }
+  }
+
+  // Ajouter raccourci (popup)
+  addShortcutBtn.addEventListener('click', () => {
+    openPopupForEdit();
+  });
 </script>
+
 </body>
 </html>
