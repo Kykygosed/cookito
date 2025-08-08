@@ -82,23 +82,27 @@
     const moviesContainer = document.getElementById('moviesContainer');
 
     // Crée un nouveau film dans Firebase, récupère l'ID, et crée un formulaire pour le modifier
-    function addNewMovie() {
-      const newMovieRef = db.ref('movies').push();
-      const newMovieId = newMovieRef.key;
+function addNewMovie() {
+  const newMovieRef = db.ref('movies').push();
+  const newMovieId = newMovieRef.key;
 
-      // Créer un objet vide dans la DB au départ
-      newMovieRef.set({
-        name: "",
-        description: "",
-        date: "",
-        realisator: "",
-        tags: "",
-        nsfw: false,
-        path: ""
-      });
+  const datePublication = new Date().toISOString();
 
-      createMovieForm(newMovieId);
-    }
+  newMovieRef.set({
+    name: "",
+    description: "",
+    date: "",
+    realisator: "",
+    tags: "",
+    nsfw: false,
+    path: "",
+    datePublication: datePublication,
+    views: 0
+  });
+
+  createMovieForm(newMovieId);
+}
+
 
     // Crée un formulaire HTML lié à un ID film donné
     function createMovieForm(movieId) {
