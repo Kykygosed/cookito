@@ -148,9 +148,24 @@ function displayMovies(movies, selectedId = null) {
     // miniatures = image du film
 const img = document.createElement('img');
 img.className = 'movie-thumb';
-img.src = movie.imageurl; // URL venant de Firebase
-img.alt = movie.name;
-img.loading = 'lazy'; // Optionnel, mais recommandé
+
+// Construction du chemin image relatif à GitHub Pages projet
+// Extrait le "base path" (ex: "/cookito/")
+const BASE_PATH = window.location.pathname.split('/').slice(0, 2).join('/') + '/';
+
+// Si l'URL dans Firebase est juste un nom de fichier
+let imageSrc = movie.imageurl || "";
+if(imageSrc && !imageSrc.startsWith('http') && !imageSrc.startsWith('/')) {
+  imageSrc = BASE_PATH + imageSrc;
+} else if(imageSrc && imageSrc.startsWith('/')) {
+  // si imageUrl a slash devant, ajoute juste base path sans dupliquer le slash
+  imageSrc = BASE_PATH + imageSrc.substring(1);
+}
+
+img.src = imageSrc;
+img.alt = movie.name || '';
+img.loading = 'lazy'; // lazy loading natif HTML5
+
 div.appendChild(img);
     // Au survol : sélectionne ce film
     div.addEventListener('mouseenter', () => selectMovie(movie.id));
