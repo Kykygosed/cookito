@@ -5,94 +5,176 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Cookitos Dashboard</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 1rem;
-    background: #f9f9f9;
-    color: #222;
+  /* Reset basique */
+  * {
+    box-sizing: border-box;
   }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 480px;
+    margin: 2rem auto;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #eef2f7, #d9e2ec);
+    color: #344050;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(100, 100, 140, 0.2);
+  }
+
   h1 {
     text-align: center;
-    margin-bottom: 1rem;
+    font-weight: 700;
+    font-size: 2.2rem;
+    color: #1a202c;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1.2px;
   }
+
   #balance {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
+    font-size: 2rem;
+    font-weight: 600;
     text-align: center;
+    margin-bottom: 2.5rem;
+    color: #2563eb; /* bleu vif */
   }
+
   label {
-    font-weight: bold;
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    color: #475569;
   }
+
   input[type=text], input[type=number] {
     width: 100%;
-    padding: 0.5rem;
-    margin: 0.3rem 0 1rem 0;
-    box-sizing: border-box;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    padding: 0.65rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    border: 1.8px solid #cbd5e1;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
   }
+  input[type=text]:focus,
+  input[type=number]:focus {
+    border-color: #2563eb;
+    outline: none;
+    background: #f0f5ff;
+  }
+
   #searchResults {
-    border: 1px solid #ccc;
-    max-height: 120px;
+    border: 1.5px solid #cbd5e1;
+    max-height: 140px;
     overflow-y: auto;
     background: white;
-    margin-top: -1rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
+    margin-top: -0.7rem;
+    margin-bottom: 1.8rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    font-size: 0.95rem;
   }
   #searchResults div {
-    padding: 0.5rem;
+    padding: 0.55rem 1rem;
     cursor: pointer;
+    transition: background-color 0.25s ease;
+    color: #334155;
   }
   #searchResults div:hover {
-    background-color: #eef;
+    background-color: #e0e7ff;
+    color: #1e40af;
   }
+
+  .selectedUser {
+    font-weight: 700;
+    color: #2563eb;
+    margin-bottom: 1.8rem;
+    font-size: 1rem;
+    border-left: 4px solid #2563eb;
+    padding-left: 0.8rem;
+    user-select: none;
+  }
+
   button {
-    padding: 0.7rem 1.5rem;
-    background-color: #007bff;
+    display: block;
+    width: 100%;
+    padding: 0.85rem;
+    background-color: #2563eb;
     border: none;
-    border-radius: 5px;
+    border-radius: 10px;
     color: white;
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 1.1rem;
     cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background-color: #1e40af;
+    box-shadow: 0 6px 18px rgba(30, 64, 175, 0.6);
   }
   button:disabled {
-    background-color: #aaa;
+    background-color: #a1a1aa;
     cursor: not-allowed;
+    box-shadow: none;
   }
+
   #notifications {
-    margin-top: 2rem;
+    margin-top: 3rem;
   }
   #notifications h2 {
-    margin-bottom: 0.5rem;
+    font-weight: 700;
+    margin-bottom: 0.7rem;
+    color: #334155;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 0.2rem;
   }
   #notifications ul {
     list-style: none;
     padding-left: 0;
-    max-height: 200px;
+    max-height: 220px;
     overflow-y: auto;
     background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    font-size: 0.9rem;
   }
   #notifications li {
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #475569;
+    line-height: 1.3;
   }
   #notifications li:last-child {
     border-bottom: none;
   }
+
   #logoutBtn {
-    margin-top: 2rem;
-    background-color: #dc3545;
-    width: 100%;
+    margin-top: 3rem;
+    background-color: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+    font-size: 1.15rem;
   }
-  .selectedUser {
-    font-weight: bold;
-    color: #007bff;
-    margin-bottom: 1rem;
+  #logoutBtn:hover {
+    background-color: #b91c1c;
+    box-shadow: 0 6px 18px rgba(185, 28, 28, 0.7);
+  }
+
+  /* Responsive pour petits écrans */
+  @media (max-width: 500px) {
+    body {
+      margin: 1rem;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+    }
+    h1 {
+      font-size: 1.8rem;
+    }
+    #balance {
+      font-size: 1.6rem;
+      margin-bottom: 2rem;
+    }
+    button {
+      font-size: 1rem;
+    }
   }
 </style>
 </head>
