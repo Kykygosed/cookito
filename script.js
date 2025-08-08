@@ -1,227 +1,235 @@
-// --- Configuration Firebase ---
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyDyWu4TI4PIRXfeb7yqt0WIGClgu10IjkM",
   authDomain: "kylita-f2923.firebaseapp.com",
   databaseURL: "https://kylita-f2923-default-rtdb.firebaseio.com",
   projectId: "kylita-f2923",
-  storageBucket: "kylita-f2923.firebasestorage.app",
+  storageBucket: "kylita-f2923.firbaseapp.com",
   messagingSenderId: "431823530994",
   appId: "1:431823530994:web:88a07e633751686e5ad96b",
   measurementId: "G-F4LLNWQJ16"
 };
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.database();
 
-// --- Sélecteurs ---
-const loader = document.getElementById("loader");
-const app = document.getElementById("app");
+const loader = document.getElementById('loader');
+const mainContent = document.getElementById('main-content');
+const moviesList = document.getElementById('movies-list');
+const searchBar = document.getElementById('search-bar');
+const filmHeader = document.getElementById('film-header');
+const filmName = document.getElementById('film-name');
+const filmDate = document.getElementById('film-date');
+const filmRealisator = document.getElementById('film-realisator');
+const filmDescription = document.getElementById('film-description');
+const filmNSFW = document.getElementById('film-nsfw-warning');
+const watchBtn = document.getElementById('watch-btn');
+const videoOverlay = document.getElementById('video-overlay');
+const filmVideo = document.getElementById('film-video');
+const videoControls = document.querySelector('.video-controls');
+const playPauseBtn = document.getElementById('play-pause');
+const forwardBtn = document.getElementById('forward');
+const backwardBtn = document.getElementById('backward');
+const restartBtn = document.getElementById('restart');
+const exitBtn = document.getElementById('exit');
 
-const moviesContainer = document.getElementById("movies-container");
-const searchInput = document.getElementById("search");
+let allMovies = [];
+let selectedMovie = null;
 
-const selectedMovieSection = document.getElementById("selected-movie");
-const movieTitle = document.getElementById("movie-title");
-const movieDescription = document.getElementById("movie-description");
-const movieDate = document.getElementById("movie-date");
-const movieDirector = document.getElementById("movie-director");
-const nsfwWarning = document.getElementById("nsfw-warning");
-const launchBtn = document.getElementById("launch-btn");
-
-const videoOverlay = document.getElementById("video-overlay");
-const movieVideo = document.getElementById("movie-video");
-
-const btnPlayPause = document.getElementById("btn-play-pause");
-const btnForward = document.getElementById("btn-forward");
-const btnBackward = document.getElementById("btn-backward");
-const btnRestart = document.getElementById("btn-restart");
-const btnExit = document.getElementById("btn-exit");
-
-let moviesData = {};
-let selectedMovieId = null;
-let videoPlaying = false;
-
-// --- Fonctions utilitaires ---
-function formatDate(timestamp) {
-  const d = new Date(timestamp);
-  return d.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function clearSelection() {
-  document.querySelectorAll(".movie-thumb.selected").forEach((el) => {
-    el.classList.remove("selected");
-  });
-  selectedMovieId = null;
-  selectedMovieSection.classList.add("hidden");
-  app.style.backgroundImage = "";
-}
-
-// --- Afficher un film sélectionné ---
-function displaySelectedMovie(id) {
-  if (!moviesData[id]) return;
-  selectedMovieId = id;
-  const movie = moviesData[id];
-
-  // Sélection visuelle
-  clearSelection();
-  const thumb = document.querySelector(`.movie-thumb[data-id="${id}"]`);
-  if (thumb) thumb.classList.add("selected");
-
-  // Affichage des infos
-  movieTitle.textContent = movie.name || "Titre inconnu";
-  movieDescription.textContent = movie.description || "";
-  movieDate.textContent = movie.date
-    ? formatDate(movie.date)
-    : "Date inconnue";
-  movieDirector.textContent = movie.director || "";
-
-  nsfwWarning.classList.toggle("hidden", !movie.nsfw);
-
-  // Background
-  if (movie.image) {
-    app.style.backgroundImage = `url('${movie.image}')`;
-  } else {
-    app.style.backgroundImage = "";
+/** Formatte la date (timestamp ou string YYYY-MM-DD) */
+function formatDate(d) {
+  if(!d) return '';
+  // Si timestamp
+  if (typeof d === 'number') {
+    return new Date(d).toLocaleDateString('fr-FR');
   }
-
-  selectedMovieSection.classList.remove("hidden");
+  // Si format string
+  let tryDate = new Date(d);
+  if (!isNaN(tryDate)) return tryDate.toLocaleDateString('fr-FR');
+  return d;
 }
 
-// --- Charger les films depuis Firebase ---
-function loadMovies() {
-  db.ref("movies").once("value").then((snapshot) => {
-    const movies = snapshot.val() || {};
-
-    // Trier par date (du plus récent au plus ancien)
-    moviesData = Object.entries(movies)
-      .map(([id, data]) => ({ id, ...data }))
-      .sort((a, b) => (b.date || 0) - (a.date || 0))
-      .reduce((acc, movie) => {
-        acc[movie.id] = movie;
-        return acc;
-      }, {});
-
-    renderMovies(Object.values(moviesData));
-    loader.classList.add("hidden");
-    app.classList.remove("hidden");
-
-    // Sélectionne le premier film automatiquement s'il y en a
-    if (Object.keys(moviesData).length > 0) {
-      displaySelectedMovie(Object.keys(moviesData)[0]);
-    }
-  });
-}
-
-// --- Afficher la liste des films (vignettes) ---
-function renderMovies(list) {
-  moviesContainer.innerHTML = "";
-  list.forEach((movie) => {
-    const div = document.createElement("div");
-    div.className = "movie-thumb";
-    div.style.backgroundImage = movie.image
-      ? `url('${movie.image}')`
-      : "none";
-    div.dataset.id = movie.id;
-    div.title = movie.name || "Film";
-
-    div.addEventListener("mouseenter", () => {
-      displaySelectedMovie(movie.id);
+// Charge tous les films à partir de Firebase
+function fetchMovies(cb) {
+  db.ref('movies').once('value').then(snap => {
+    let movies = [];
+    snap.forEach(child => {
+      const val = child.val();
+      // chaque film : structure attendue
+      movies.push({
+        id: child.key,
+        name: val.name || "",
+        description: val.description || "",
+        imageurl: val.imageurl || "",
+        nsfw: !!val.nsfw,
+        path: val.path || "",
+        date: val.date || "",
+        datepublication: val.datepublication || "",
+        realisator: val.realisator || "",
+        tags: val.tags || ""
+      });
     });
-
-    moviesContainer.appendChild(div);
+    cb(movies);
   });
 }
 
-// --- Recherche ---
-searchInput.addEventListener("input", (e) => {
-  const query = e.target.value.trim().toLowerCase();
+// Affiche la liste des films selon un ordre donné
+function displayMovies(movies, selectedId = null) {
+  moviesList.innerHTML = "";
+  movies.forEach(movie => {
+    const div = document.createElement('div');
+    div.className = "movie-item" + (movie.id === selectedId ? ' selected' : '');
+    div.dataset.id = movie.id;
+    // miniatures = image du film
+    const img = document.createElement('img');
+    img.className = 'movie-thumb';
+    img.src = movie.imageurl;
+    img.alt = movie.name;
+    div.appendChild(img);
 
-  if (query === "") {
-    renderMovies(Object.values(moviesData));
+    // Au survol : sélectionne ce film
+    div.addEventListener('mouseenter', () => selectMovie(movie.id));
+    div.addEventListener('focus', () => selectMovie(movie.id));
+    // Tab navigation : aussi au focus
+    div.tabIndex = 0;
+
+    // cliquer sur une miniature = sélectionner (facilite mobile)
+    div.addEventListener('click', () => selectMovie(movie.id));
+
+    moviesList.appendChild(div);
+  });
+}
+
+// Affichage des infos du film sélectionné
+function updateHeader(movie) {
+  // BG image (header)
+  filmHeader.classList.remove('bg');
+  filmHeader.style.backgroundImage = '';
+  if(movie.imageurl) {
+    filmHeader.classList.add('bg');
+    filmHeader.style.backgroundImage = `linear-gradient(rgba(15,19,29,0.82),rgba(17,22,40,0.71)), url('${movie.imageurl}')`;
+  }
+
+  filmName.textContent = movie.name || '';
+  filmDescription.textContent = movie.description || '';
+  filmDate.textContent = movie.date ? formatDate(movie.date) : '';
+  filmRealisator.textContent = movie.realisator ? "Réalisé par " + movie.realisator : '';
+  // NSFW
+  if(movie.nsfw) {
+    filmNSFW.style.display = '';
+    filmNSFW.innerHTML = "AVERTISSEMENT - Ce film contient des scènes NSFW, pouvant ne pas être adaptées à tout âge.";
   } else {
-    const filtered = Object.values(moviesData).filter((movie) =>
-      movie.name.toLowerCase().includes(query)
-    );
-    renderMovies(filtered);
-    if (filtered.length > 0) {
-      displaySelectedMovie(filtered[0].id);
-    } else {
-      clearSelection();
-    }
+    filmNSFW.style.display = 'none';
+    filmNSFW.innerHTML = '';
+  }
+  // Toggle bouton "Lancer!"
+  if(movie.path) {
+    watchBtn.style.display = '';
+  } else {
+    watchBtn.style.display = 'none';
+  }
+}
+
+// Sélectionne un film
+function selectMovie(id) {
+  const movie = allMovies.find(m => m.id === id);
+  if (!movie) return;
+  selectedMovie = movie;
+  // Mettre à jour le header
+  updateHeader(movie);
+
+  // Marquer la sélection visuelle
+  document.querySelectorAll('.movie-item').forEach(div => {
+    if(div.dataset.id === id) div.classList.add("selected");
+    else div.classList.remove("selected");
+  });
+}
+
+function filterMovies(query) {
+  query = query.trim().toLowerCase();
+  if(!query) return allMovies;
+  return allMovies.filter(m => m.name.toLowerCase().includes(query));
+}
+
+// ------ Lecteur vidéo (overlay) ------
+function showVideoOverlay(movie) {
+  videoOverlay.style.display = '';
+  filmVideo.src = movie.path;
+  filmVideo.currentTime = 0;
+  filmVideo.pause();
+  videoControls.style.display = '';
+  filmVideo.play();
+}
+function hideVideoOverlay() {
+  filmVideo.pause();
+  filmVideo.src = "";
+  videoOverlay.style.display = 'none';
+  videoControls.style.display = 'none';
+  // Se protège contre focus/scroll vidéo
+}
+
+// Vidéo : boutons
+playPauseBtn.onclick = () => {
+  if (filmVideo.paused) {
+    filmVideo.play();
+    playPauseBtn.textContent = '⏸️';
+  } else {
+    filmVideo.pause();
+    playPauseBtn.textContent = '⏯️';
+  }
+};
+filmVideo.onplay = () => { playPauseBtn.textContent = '⏸️'; };
+filmVideo.onpause = () => { playPauseBtn.textContent = '⏯️'; };
+restartBtn.onclick = () => { filmVideo.currentTime = 0; };
+forwardBtn.onclick = () => { filmVideo.currentTime += 10; };
+backwardBtn.onclick = () => { filmVideo.currentTime = Math.max(0, filmVideo.currentTime - 10); };
+exitBtn.onclick = () => { hideVideoOverlay(); };
+
+videoOverlay.addEventListener('mousemove', () => {
+  videoControls.style.display = '';
+  // Timeout masquage possible si tu veux (ici, toujours visible)
+});
+
+// "Lancer!" bouton
+watchBtn.onclick = () => {
+  if(selectedMovie && selectedMovie.path) {
+    showVideoOverlay(selectedMovie);
+  }
+};
+
+// ---------- Recherche ----------
+searchBar.addEventListener('input', (e) => {
+  const val = searchBar.value;
+  const filtered = filterMovies(val);
+  displayMovies(filtered, selectedMovie ? selectedMovie.id : null);
+  // Si le film sélectionné n'est pas dans les résultats filtrés, changer header
+  if(selectedMovie && !filtered.some(m => m.id === selectedMovie.id) && filtered.length > 0) {
+    selectMovie(filtered[0].id);
+  } else if (filtered.length === 0) {
+    // Vide le header
+    filmName.textContent = filmDescription.textContent = "";
+    filmDate.textContent = filmRealisator.textContent = "";
+    filmHeader.style.backgroundImage = "";
+    watchBtn.style.display = 'none';
+    filmNSFW.style.display = 'none';
   }
 });
 
-// --- Lancer la vidéo ---
-launchBtn.addEventListener("click", () => {
-  if (!selectedMovieId) return;
-  const movie = moviesData[selectedMovieId];
-  if (!movie || !movie.path) return;
+// -------------------- INITIALISATION --------------------
 
-  movieVideo.src = movie.path;
-  movieVideo.currentTime = 0;
-  videoOverlay.classList.remove("hidden");
-  movieVideo.play();
-  videoPlaying = true;
-  btnPlayPause.textContent = "⏸️";
-});
-
-// --- Contrôles vidéo ---
-btnPlayPause.addEventListener("click", () => {
-  if (videoPlaying) {
-    movieVideo.pause();
-    videoPlaying = false;
-    btnPlayPause.textContent = "▶️";
-  } else {
-    movieVideo.play();
-    videoPlaying = true;
-    btnPlayPause.textContent = "⏸️";
-  }
-});
-
-btnForward.addEventListener("click", () => {
-  movieVideo.currentTime = Math.min(
-    movieVideo.duration,
-    movieVideo.currentTime + 10
+// Chargement initial
+fetchMovies(movies => {
+  allMovies = movies.sort((a,b) =>
+    // trier par datepublication (du plus récent au plus ancien)
+    new Date(b.datepublication) - new Date(a.datepublication)
   );
-});
-
-btnBackward.addEventListener("click", () => {
-  movieVideo.currentTime = Math.max(0, movieVideo.currentTime - 10);
-});
-
-btnRestart.addEventListener("click", () => {
-  movieVideo.currentTime = 0;
-  if (!videoPlaying) {
-    movieVideo.play();
-    videoPlaying = true;
-    btnPlayPause.textContent = "⏸️";
+  // Affiche films
+  displayMovies(allMovies);
+  if(allMovies.length) {
+    selectMovie(allMovies[0].id);
   }
+  loader.style.display = 'none';
+  mainContent.style.display = '';
 });
 
-btnExit.addEventListener("click", () => {
-  movieVideo.pause();
-  movieVideo.src = "";
-  videoOverlay.classList.add("hidden");
-  videoPlaying = false;
-  btnPlayPause.textContent = "▶️";
-});
-
-// --- Affiche les contrôles quand on bouge la souris sur la vidéo ---
-let controlsTimeout;
-videoOverlay.addEventListener("mousemove", () => {
-  const controls = document.getElementById("video-controls");
-  controls.style.opacity = "1";
-  clearTimeout(controlsTimeout);
-  controlsTimeout = setTimeout(() => {
-    controls.style.opacity = "0";
-  }, 3000);
-});
-
-// --- Initialisation ---
-window.addEventListener("load", () => {
-  loadMovies();
-});
+</script>
