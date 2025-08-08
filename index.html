@@ -146,12 +146,12 @@ function displayMovies(movies, selectedId = null) {
     div.className = "movie-item" + (movie.id === selectedId ? ' selected' : '');
     div.dataset.id = movie.id;
     // miniatures = image du film
-    const img = document.createElement('img');
-    img.className = 'movie-thumb';
-    img.src = movie.imageurl;
-    img.alt = movie.name;
-    div.appendChild(img);
-
+const img = document.createElement('img');
+img.className = 'movie-thumb';
+img.src = movie.imageurl; // URL venant de Firebase
+img.alt = movie.name;
+img.loading = 'lazy'; // Optionnel, mais recommandé
+div.appendChild(img);
     // Au survol : sélectionne ce film
     div.addEventListener('mouseenter', () => selectMovie(movie.id));
     div.addEventListener('focus', () => selectMovie(movie.id));
