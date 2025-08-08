@@ -1,4 +1,4 @@
-<script>
+
 const firebaseConfig = {
   apiKey: "AIzaSyDyWu4TI4PIRXfeb7yqt0WIGClgu10IjkM",
   authDomain: "kylita-f2923.firebaseapp.com",
@@ -232,4 +232,3 @@ fetchMovies(movies => {
   mainContent.style.display = '';
 });
 
-</script>
