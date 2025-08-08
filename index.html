@@ -219,12 +219,18 @@ function filterMovies(query) {
 // ------ Lecteur vidéo (overlay) ------
 function showVideoOverlay(movie) {
   videoOverlay.style.display = '';
-  filmVideo.src = movie.path;
+  let videoSrc = movie.path || "";
+  // Si le chemin ne commence pas par http ni par /, ajoute simplement la racine
+  if (videoSrc && !videoSrc.startsWith('http') && !videoSrc.startsWith('/')) {
+    videoSrc = '/' + videoSrc;
+  }
+  filmVideo.src = videoSrc;
   filmVideo.currentTime = 0;
   filmVideo.pause();
   videoControls.style.display = '';
   filmVideo.play();
 }
+
 function hideVideoOverlay() {
   filmVideo.pause();
   filmVideo.src = "";
