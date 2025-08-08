@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mes raccourcis stylés</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&family=Roboto&display=swap');
+
+  body {
+    margin: 0; padding: 0;
+    background: #121214; /* très sombre */
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    overflow: hidden;
+  }
+
+  #container {
+    position: relative;
+    width: 100vw; height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a0f1f 100%);
+    overflow: hidden;
+  }
+
+  /* Login overlay */
+  #loginOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(18,18,20,0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    flex-direction: column;
+    gap: 20px;
+  }
+  #loginOverlay h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 500;
+    font-size: 2.5rem;
+    color: #e63946;
+    text-shadow: 0 0 10px #e63946aa;
+  }
+  #loginOverlay input {
+    padding: 12px 20px;
+    border-radius: 25px;
+    border: none;
+    width: 280px;
+    font-size: 1.2rem;
+    outline: none;
+    background: #222;
+    color: #fff;
+    box-shadow: 0 0 10px #e63946bb inset;
+    transition: box-shadow 0.3s ease;
+  }
+  #loginOverlay input:focus {
+    box-shadow: 0 0 20px #f94144;
+  }
+  #loginOverlay button {
+    padding: 12px 30px;
+    border-radius: 30px;
+    border: none;
+    background: #e63946;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    box-shadow: 0 0 15px #e63946cc;
+  }
+  #loginOverlay button:hover:not(:disabled) {
+    background: #f94144;
+    box-shadow: 0 0 25px #f94144ee;
+  }
+  #loginOverlay button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Cards */
+  .card {
+    position: absolute;
+    background: #1e1e1e;
+    border-radius: 15px;
+    box-shadow: 0 0 15px #e63946cc;
+    border: 2px solid #e63946;
+    padding: 15px 20px;
+    color: #fff;
+    user-select: none;
+    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: box-shadow 0.3s ease;
+  }
+  .card:hover {
+    box-shadow: 0 0 25px #f94144dd;
+  }
+  .card a {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    color: #f94144;
+    font-size: 1.2rem;
+    text-decoration: none;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card a:hover {
+    text-decoration: underline;
+  }
+  .card small {
+    color: #bbb;
+    font-size: 0.8rem;
+    font-family: monospace;
+  }
+  .resize-handle {
+    position: absolute;
+    right: 6px; bottom: 6px;
+    width: 15px; height: 15px;
+    background: #e63946;
+    cursor: se-resize;
+    border-radius: 3px;
+    box-shadow: 0 0 10px #f94144;
+  }
+
+  /* Popup */
+  #popupOverlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(18,18,20,0.95);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 11000;
+  }
+  #popup {
+    background: #1f1f1f;
+    border: 2px solid #e63946;
+    border-radius: 20px;
+    padding: 30px 40px;
+    width: 360px;
+    box-shadow: 0 0 20px #e63946cc;
+  }
+  #popup h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: #f94144;
+    margin: 0 0 25px 0;
+    text-align: center;
+    user-select: none;
+  }
+  #popup input {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 15px;
+    border: none;
+    background: #222;
+    color: #fff;
+    font-size: 1.1rem;
+    outline: none;
+    box-shadow: 0 0 12px #e63946bb inset;
+    margin-bottom: 20px;
+    transition: box-shadow 0.3s ease;
+  }
+  #popup input:focus {
+    box-shadow: 0 0 25px #f94144;
+  }
+  #popup button {
+    padding: 12px 30px;
+    border-radius: 30px;
+    border: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-right: 15px;
+    box-shadow: 0 0 15px #e63946cc;
+    transition: background 0.3s ease;
+  }
+  #saveBtn {
+    background: #e63946;
+    color: white;
+  }
+  #saveBtn:hover {
+    background: #f94144;
+  }
+  #cancelBtn {
+    background: #444;
+    color: #ccc;
+  }
+  #cancelBtn:hover {
+    background: #666;
+  }
+</style>
+</head>
+<body>
+
+
+
+<div id="container"></div>
+
+<!-- Popup Ajouter / Modifier raccourci -->
+<div id="popupOverlay" class="popupOverlay" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
+  <div id="popup">
+    <h2 id="popupTitle">Ajouter un raccourci</h2>
+    <label for="siteName">Nom du site</label>
+    <input type="text" id="siteName" placeholder="Ex: Google" autocomplete="off" />
+    <label for="siteURL">URL</label>
+    <input type="url" id="siteURL" placeholder="Ex: https://google.com" autocomplete="off" />
+    <div id="popupButtons">
+      <button id="saveBtn">Enregistrer</button>
+      <button id="cancelBtn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup Login (pseudo) -->
+<div id="loginOverlay" class="popupOverlay" role="dialog" aria-modal="true" aria-labelledby="loginTitle" style="display:flex;">
+  <div id="loginPopup">
+    <h2 id="loginTitle">Bienvenue ! Entrez votre pseudo</h2>
+    <input type="text" id="loginInput" placeholder="Ton pseudo ici" autocomplete="off" />
+    <div id="loginButtons">
+      <button id="loginBtn">Commencer</button>
+    </div>
+  </div>
+</div>
+
+<div id="hint">Appuie sur "e" pour ajouter un raccourci</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDyWu4TI4PIRXfeb7yqt0WIGClgu10IjkM",
+    authDomain: "kylita-f2923.firebaseapp.com",
+    databaseURL: "https://kylita-f2923-default-rtdb.firebaseio.com",
+    projectId: "kylita-f2923",
+    storageBucket: "kylita-f2923.firebasestorage.app",
+    messagingSenderId: "431823530994",
+    appId: "1:431823530994:web:88a07e633751686e5ad96b",
+    measurementId: "G-F4LLNWQJ16"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const container = document.getElementById('container');
+
+  const popupOverlay = document.getElementById('popupOverlay');
+  const popupTitle = document.getElementById('popupTitle');
+  const siteNameInput = document.getElementById('siteName');
+  const siteURLInput = document.getElementById('siteURL');
+  const saveBtn = document.getElementById('saveBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+
+  const loginOverlay = document.getElementById('loginOverlay');
+  const loginInput = document.getElementById('loginInput');
+  const loginBtn = document.getElementById('loginBtn');
+
+  let currentUser = null;
+  let userId = null; // firebase UID
+  let shortcuts = {};
+  let dragTarget = null;
+  let resizeTarget = null;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  let resizeStartWidth = 0;
+  let resizeStartHeight = 0;
+  let resizeStartX = 0;
+  let resizeStartY = 0;
+  let editingId = null;
+
+  // ---------------------------
+  // Auth anonyme avec pseudo
+  // ---------------------------
+  function showLogin() {
+    loginOverlay.style.display = 'flex';
+    container.style.filter = 'blur(3px)';
+    loginInput.value = '';
+    loginInput.focus();
+  }
+  function hideLogin() {
+    loginOverlay.style.display = 'none';
+    container.style.filter = 'none';
+  }
+
+  loginBtn.addEventListener('click', () => {
+    const pseudo = loginInput.value.trim();
+    if(pseudo.length < 3) {
+      alert('Le pseudo doit faire au moins 3 caractères.');
+      loginInput.focus();
+      return;
+    }
+    loginBtn.disabled = true;
+    auth.signInAnonymously()
+    .then(cred => {
+      currentUser = cred.user;
+      userId = currentUser.uid;
+      // Save pseudo in DB
+      return db.ref('accounts/' + userId).update({ pseudo });
+    })
+    .then(() => {
+      hideLogin();
+      loadShortcuts();
+    })
+    .catch(err => {
+      alert('Erreur lors de la connexion Firebase : ' + err.message);
+      loginBtn.disabled = false;
+    });
+  });
+
+  loginInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter') loginBtn.click();
+  });
+
+  // ---------------------------
+  // Charger raccourcis
+  // ---------------------------
+  function loadShortcuts() {
+    db.ref('accounts/' + userId + '/shortcuts').once('value').then(snapshot => {
+      shortcuts = snapshot.val() || {};
+      renderShortcuts();
+    });
+  }
+
+  // ---------------------------
+  // Sauvegarder raccourcis
+  // ---------------------------
+  function saveShortcuts() {
+    db.ref('accounts/' + userId + '/shortcuts').set(shortcuts);
+  }
+
+  // ---------------------------
+  // Créer et afficher une carte raccourci
+  // ---------------------------
+  function createCard(id, data) {
+    let card = document.createElement('div');
+    card.className = 'card';
+    card.style.left = (data.x || 20) + 'px';
+    card.style.top = (data.y || 20) + 'px';
+    card.style.width = (data.width || 200) + 'px';
+    card.style.height = (data.height || 120) + 'px';
+    card.setAttribute('data-id', id);
+
+    // Contenu lien + url
+    card.innerHTML = `
+      <a href="${data.url}" target="_blank" rel="noopener noreferrer" title="${data.name}">${data.name}</a>
+      <small>${data.url}</small>
+      <div class="resize-handle"></div>
+    `;
+
+    // Drag events
+    card.addEventListener('mousedown', (e) => {
+      if(e.target.classList.contains('resize-handle')) {
+        // Resize start
+        resizeTarget = card;
+        resizeStartWidth = card.offsetWidth;
+        resizeStartHeight = card.offsetHeight;
+        resizeStartX = e.clientX;
+        resizeStartY = e.clientY;
+        e.preventDefault();
+        e.stopPropagation();
+      } else {
+        // Drag start
+        dragTarget = card;
+        dragOffsetX = e.clientX - card.offsetLeft;
+        dragOffsetY = e.clientY - card.offsetTop;
+        card.style.zIndex = 1000;
+      }
+    });
+
+    // Double click = modifier raccourci
+    card.addEventListener('dblclick', (e) => {
+      editingId = id;
+      popupTitle.textContent = 'Modifier un raccourci';
+      siteNameInput.value = data.name;
+      siteURLInput.value = data.url;
+      showPopup();
+    });
+
+    container.appendChild(card);
+  }
+
+  // ---------------------------
+  // Rendu de tous les raccourcis
+  // ---------------------------
+  function renderShortcuts() {
+    container.innerHTML = '';
+    for(let id in shortcuts) {
+      createCard(id, shortcuts[id]);
+    }
+  }
+
+  // ---------------------------
+  // Popup gestion
+  // ---------------------------
+  function showPopup() {
+    popupOverlay.style.display = 'flex';
+    siteNameInput.focus();
+  }
+  function hidePopup() {
+    popupOverlay.style.display = 'none';
+    siteNameInput.value = '';
+    siteURLInput.value = '';
+    editingId = null;
+  }
+
+  saveBtn.addEventListener('click', () => {
+    const name = siteNameInput.value.trim();
+    const url = siteURLInput.value.trim();
+    if(name === '' || url === '') {
+      alert('Veuillez renseigner nom et URL');
+      return;
+    }
+    // Validation simple URL
+    try {
+      new URL(url);
+    } catch {
+      alert('URL invalide');
+      return;
+    }
+
+    if(editingId) {
+      // Modifier raccourci
+      shortcuts[editingId].name = name;
+      shortcuts[editingId].url = url;
+    } else {
+      // Nouveau raccourci
+      const newId = Date.now().toString();
+      shortcuts[newId] = {name, url, x: 20, y: 20, width: 200, height: 120};
+    }
+    saveShortcuts();
+    renderShortcuts();
+    hidePopup();
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    hidePopup();
+  });
+
+  // ---------------------------
+  // Drag & Resize document mouse events
+  // ---------------------------
+  document.addEventListener('mousemove', e => {
+    if(dragTarget) {
+      let newX = e.clientX - dragOffsetX;
+      let newY = e.clientY - dragOffsetY;
+      newX = Math.max(0, Math.min(newX, container.clientWidth - dragTarget.offsetWidth));
+      newY = Math.max(0, Math.min(newY, container.clientHeight - dragTarget.offsetHeight));
+      dragTarget.style.left = newX + 'px';
+      dragTarget.style.top = newY + 'px';
+      // Update data
+      const id = dragTarget.getAttribute('data-id');
+      shortcuts[id].x = newX;
+      shortcuts[id].y = newY;
+      saveShortcuts();
+    } else if(resizeTarget) {
+      let deltaX = e.clientX - resizeStartX;
+      let deltaY = e.clientY - resizeStartY;
+      let newWidth = Math.max(150, resizeStartWidth + deltaX);
+      let newHeight = Math.max(80, resizeStartHeight + deltaY);
+      resizeTarget.style.width = newWidth + 'px';
+      resizeTarget.style.height = newHeight + 'px';
+      // Update data
+      const id = resizeTarget.getAttribute('data-id');
+      shortcuts[id].width = newWidth;
+      shortcuts[id].height = newHeight;
+      saveShortcuts();
+    }
+  });
+
+  document.addEventListener('mouseup', e => {
+    dragTarget = null;
+    resizeTarget = null;
+    editingId = null;
+  });
+
+  // ---------------------------
+  // Keyboard shortcut to add new
+  // ---------------------------
+  document.addEventListener('keydown', e => {
+    if(e.key === 'e' && !loginOverlay.style.display) {
+      editingId = null;
+      popupTitle.textContent = 'Ajouter un raccourci';
+      siteNameInput.value = '';
+      siteURLInput.value = '';
+      showPopup();
+    }
+  });
+
+  // Au chargement, on affiche le login
+  showLogin();
+</script>
+</body>
+</html>
