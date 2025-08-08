@@ -1,0 +1,212 @@
+/* Reset & base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  user-select: none;
+}
+
+body, html {
+  height: 100%;
+  background-color: #0a0f2c;
+  color: white;
+  overflow: hidden;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#loader {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 5rem;
+}
+
+.spinner {
+  display: flex;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #07112a;
+}
+
+header {
+  padding: 15px;
+  background-color: #0f1a44;
+  display: flex;
+  justify-content: center;
+}
+
+header input[type="text"] {
+  width: 60%;
+  padding: 10px;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background-color: #192c72;
+  color: white;
+}
+
+header input[type="text"]::placeholder {
+  color: #b0b5c4;
+}
+
+#movies-list {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+#movies-list h2 {
+  margin-bottom: 15px;
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: #65a1ff;
+}
+
+#movies-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.movie-thumb {
+  width: 120px;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  box-shadow: 0 0 5px #3a4db7;
+  border: 2px solid transparent;
+}
+
+.movie-thumb:hover,
+.movie-thumb.selected {
+  transform: scale(1.1);
+  border-color: #65a1ff;
+}
+
+#selected-movie {
+  position: relative;
+  padding: 25px 40px;
+  border-bottom: 1px solid #24386a;
+  background-color: rgba(5, 9, 29, 0.75);
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-shrink: 0;
+  min-height: 220px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 100px rgba(0,0,0,0.7);
+}
+
+#selected-movie .info {
+  background-color: rgba(10, 15, 44, 0.75);
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 700px;
+  flex-grow: 1;
+  color: white;
+}
+
+#movie-title {
+  font-size: 2.6rem;
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+
+#movie-date-director {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #b0b5c4;
+  margin-bottom: 10px;
+}
+
+#movie-description {
+  color: #b0b5c4;
+  line-height: 1.3rem;
+  margin-bottom: 10px;
+}
+
+#nsfw-warning {
+  color: #ff5555;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+#launch-btn {
+  padding: 10px 25px;
+  background-color: #3a64ff;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#launch-btn:hover {
+  background-color: #2a4fcc;
+}
+
+#video-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #000c2c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+#movie-video {
+  max-width: 90vw;
+  max-height: 70vh;
+  border-radius: 12px;
+  background-color: black;
+  outline: none;
+}
+
+#video-controls {
+  margin-top: 15px;
+  display: flex;
+  gap: 15px;
+}
+
+#video-controls button {
+  background-color: #3a64ff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1.1rem;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+
+#video-controls button:hover {
+  background-color: #2a4fcc;
+}
