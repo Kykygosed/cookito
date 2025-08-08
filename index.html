@@ -1,55 +1,62 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Page Utilisateur - Films</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Films - Recents</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Animation de chargement -->
   <div id="loader">
-    <div class="spinner">🍪🍪</div>
+    <div class="cookies">
+      <span class="cookie" id="cookie1">🍪</span>
+      <span class="cookie" id="cookie2">🍪</span>
+    </div>
+    <div class="loading-text">Chargement...</div>
   </div>
 
-  <div id="app" class="hidden">
-    <header>
-      <input type="text" id="search" placeholder="Rechercher un film..." autocomplete="off" />
+  <!-- Contenu principal caché tant que loader affiché -->
+  <div id="main-content" style="display:none;">
+
+    <!-- Header avec nom/description dynamique -->
+    <header id="film-header">
+      <div id="film-info">
+        <div id="film-name"></div>
+        <div id="film-date-realisator">
+          <span id="film-date"></span>
+          <span id="film-realisator"></span>
+        </div>
+        <div id="film-description"></div>
+        <div id="film-nsfw-warning" style="display:none;"></div>
+        <button id="watch-btn" style="display:none;">Lancer !</button>
+      </div>
     </header>
 
-    <section id="selected-movie" class="hidden">
-      <div class="info">
-        <h1 id="movie-title"></h1>
-        <div id="movie-date-director">
-          <span id="movie-date"></span>
-          <span id="movie-director"></span>
-        </div>
-        <p id="movie-description"></p>
-        <p id="nsfw-warning" class="hidden">
-          AVERTISSEMENT - Ce film contient des scènes NSFW, pouvant ne pas être adaptées à tout âge.
-        </p>
-        <button id="launch-btn">Lancer !</button>
-      </div>
-    </section>
+    <!-- Barre de recherche -->
+    <div id="search-bar-container">
+      <input id="search-bar" type="text" placeholder="Rechercher un film..." />
+    </div>
 
-    <section id="movies-list">
+    <!-- Catégorie "Recents" -->
+    <section id="recents">
       <h2>Recents</h2>
-      <div id="movies-container"></div>
+      <div id="movies-list"></div>
     </section>
   </div>
 
-  <div id="video-overlay" class="hidden">
-    <video id="movie-video" controls></video>
-    <div id="video-controls">
-      <button id="btn-restart">⏮️ Recommencer</button>
-      <button id="btn-backward">⏪ -10s</button>
-      <button id="btn-play-pause">▶️</button>
-      <button id="btn-forward">⏩ +10s</button>
-      <button id="btn-exit">❌ Quitter</button>
+  <!-- Overlay lecteur vidéo -->
+  <div id="video-overlay" style="display:none;">
+    <video id="film-video" src="" preload="auto"></video>
+    <div class="video-controls" style="display:none;">
+      <button id="play-pause">⏯️</button>
+      <button id="backward">⏪ 10s</button>
+      <button id="forward">10s ⏩</button>
+      <button id="restart">⏭️ Début</button>
+      <button id="exit">❌ Quitter</button>
     </div>
   </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-  <script src="script.js"></script>
 </body>
 </html>
