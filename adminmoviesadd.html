@@ -88,17 +88,19 @@ function addNewMovie() {
 
   const datePublication = new Date().toISOString();
 
-  newMovieRef.set({
-    name: "",
-    description: "",
-    date: "",
-    realisator: "",
-    tags: "",
-    nsfw: false,
-    path: "",
-    datePublication: datePublication,
-    views: 0
-  });
+newMovieRef.set({
+  name: "",
+  description: "",
+  date: "",
+  realisator: "",
+  tags: "",
+  nsfw: false,
+  path: "",
+  imageUrl: "",      // ajouté ici
+  datePublication: datePublication,
+  views: 0
+});
+
 
   createMovieForm(newMovieId);
 }
@@ -110,30 +112,34 @@ function addNewMovie() {
       form.classList.add('movie-form');
       form.id = `movie-${movieId}`;
 
-      form.innerHTML = `
-        <div class="movie-id">ID: ${movieId}</div>
-        <label>Nom :
-          <input type="text" name="name" placeholder="Nom du film" />
-        </label>
-        <label>Description :
-          <textarea name="description" rows="3" placeholder="Description"></textarea>
-        </label>
-        <label>Date :
-          <input type="date" name="date" />
-        </label>
-        <label>Réalisateur :
-          <input type="text" name="realisator" placeholder="Nom du réalisateur" />
-        </label>
-        <label>Tags (séparés par des virgules) :
-          <input type="text" name="tags" placeholder="tag1, tag2, tag3" />
-        </label>
-        <label>
-          <input type="checkbox" name="nsfw" /> NSFW
-        </label>
-        <label>Chemin (path) :
-          <input type="text" name="path" placeholder="/chemin/du/fichier" />
-        </label>
-      `;
+     form.innerHTML = `
+  <div class="movie-id">ID: ${movieId}</div>
+  <label>Nom :
+    <input type="text" name="name" placeholder="Nom du film" />
+  </label>
+  <label>Description :
+    <textarea name="description" rows="3" placeholder="Description"></textarea>
+  </label>
+  <label>Date :
+    <input type="date" name="date" />
+  </label>
+  <label>Réalisateur :
+    <input type="text" name="realisator" placeholder="Nom du réalisateur" />
+  </label>
+  <label>Tags (séparés par des virgules) :
+    <input type="text" name="tags" placeholder="tag1, tag2, tag3" />
+  </label>
+  <label>
+    <input type="checkbox" name="nsfw" /> NSFW
+  </label>
+  <label>Chemin (path) :
+    <input type="text" name="path" placeholder="/chemin/du/fichier" />
+  </label>
+  <label>URL de l'image :
+    <input type="text" name="imageUrl" placeholder="https://exemple.com/image.jpg" />
+  </label>
+`;
+
 
       moviesContainer.appendChild(form);
 
